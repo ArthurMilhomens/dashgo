@@ -1,11 +1,32 @@
-import { Box, Button, Checkbox, Flex, Heading, Icon, Table, Tbody, Td, Th, Thead, Tr, Text, useBreakpointValue, Spinner } from "@chakra-ui/react";
-import Link from "next/link";
 import { useState } from "react";
+import {
+  Box,
+  Button,
+  Checkbox,
+  Flex,
+  Heading,
+  Icon,
+  Table,
+  Tbody,
+  Td,
+  Th,
+  Thead,
+  Tr,
+  Text,
+  useBreakpointValue,
+  Spinner,
+  Link as ChakraLink
+} from "@chakra-ui/react";
+import Link from "next/link";
+
 import { RiAddLine, RiPencilLine } from "react-icons/ri";
+
 import Header from "../../components/Header";
 import Pagination from "../../components/Pagination";
 import Sidebar from "../../components/Sidebar";
+import { api } from "../../services/api";
 import { useUsers } from "../../services/hooks/useUser";
+import { queryClient } from "../../services/queryClient";
 
 export default function UsersList() {
   const [page, setPage] = useState(1);
@@ -16,7 +37,15 @@ export default function UsersList() {
     lg: true
   })
 
-  console.log(data)
+  async function handlePrefetchUser(userId: string) {
+    await queryClient.prefetchQuery(['user', userId], async () => {
+      const response = await api.get(`users/${userId}`)
+
+      return response.data
+    }, {
+      staleTime: 1000 * 60 * 10, // 10 minutes
+    })
+  }
 
   return (
     <Box>
@@ -72,7 +101,9 @@ export default function UsersList() {
                     </Td>
                     <Td>
                       <Box>
-                        <Text fontWeight="bold">{user.name}</Text>
+                        <ChakraLink color="green.400" onMouseEnter={() => handlePrefetchUser(user.id)}>
+                          <Text fontWeight="bold">{user.name}</Text>
+                        </ChakraLink>
                         <Text fontSize="sm" color="gray.300">{user.email}</Text>
                       </Box>
                     </Td>
@@ -94,7 +125,7 @@ export default function UsersList() {
           }
 
           <Pagination
-            totalCountOfRegisters={200}
+            totalCountOfRegisters={data.totalCount}
             currentPage={page}
             onPageChange={setPage}
           />
